@@ -1,0 +1,58 @@
+---
+title: "Untitled"
+author: "Thembelihle Hadebe"
+date: "2/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(raster)
+
+img = raster("data/raw/Ortho_NRG/cederberg_39.tif")
+img_stack = stack("data/raw/Ortho_NRG/cederberg_39.tif")
+
+
+# create a grayscale color palette to use for the image.
+grayscale_colors <- gray.colors(100,            # number of different color levels 
+                                start = 0.0,    # how black (0) to go
+                                end = 1.0,      # how white (1) to go
+                                gamma = 1.2,    # correction between how a digital 
+                                # camera sees the world and how human eyes see it
+                                alpha = NULL) 
+
+plot(img_stack)
+plotRGB(img_stack, band = 1)
+```
+
+```{r}
+band_1 = raster("data/raw/Ortho_NRG/cederberg_618.tif", band = 1)
+band_2 = raster("data/raw/Ortho_NRG/cederberg_618.tif", band = 2)
+band_3 = raster("data/raw/Ortho_NRG/cederberg_618.tif", band = 3)
+img_stack = stack("data/raw/Ortho_NRG/cederberg_618.tif")
+
+# adjust the parameters so the axes colors are white. Also turn off tick marks.
+par(col.axis = "white", col.lab = "black")
+par(mfrow = c(2, 2))
+
+plotRGB(img_stack,
+     main = "NRG image", 
+     axes = F, box = F,
+     cex.main = 0.9)
+plot(band_1, col = grayscale_colors,
+     main = "Near-infrared channel", 
+     axes = F, box = F,
+     cex.main = 0.9)
+plot(band_2, col = grayscale_colors,
+     main = "Red channel", 
+     axes = F, box = F,
+     cex.main = 0.9)
+plot(band_3, col = grayscale_colors,
+     main = "Green channel", 
+     axes = F, box = F,
+     cex.main = 0.9)
+```
+

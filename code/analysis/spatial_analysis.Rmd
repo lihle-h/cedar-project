@@ -1,0 +1,104 @@
+---
+author: "Thembelihle Hadebe"
+date: "2/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rgdal, quietly = T)
+library(raster, quietly = T)
+library(rgeos, quietly = T)
+library(sf, quietly = T)
+library(RColorBrewer, quietly = T)
+library(viridis, quietly = T)
+library(rasterVis, quietly = T)
+library(dplyr, quietly = T)
+```
+
+```{r}
+if (Sys.getenv("USER")=='Blessings') {
+datwd="data/"
+giswd="gis/"
+reswd="results/"}
+```
+
+```{r}
+stdCRS = "+proj=tmerc +lat_0=0 +lon_0=19 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0 "
+```
+
+# Read in Cederberg outline shapefile 
+
+```{r}
+cederberg = readOGR( 
+  dsn = paste0(datwd, "Cederberg/" , "cederberg.shp"),
+  verbose=FALSE
+)
+```
+
+# Read in shapefiles
+
+```{r}
+all_cedars = readOGR( 
+  dsn = paste0(datwd, "All_Cedars/" , "All_Cedars.shp"),
+  verbose=FALSE
+)
+predicted_cedars = readOGR(
+  dsn = paste0(datwd, "Predictions/" , "prediction_centroids.shp"),
+  verbose=FALSE
+)
+```
+
+
+# Intersect point layers with the Cederberg outline
+
+```{r}
+all_pts <- raster::intersect(all_cedars, cederberg)
+pred_pts <- raster::intersect(predicted_cedars, cederberg)
+
+all_pts = SpatialPoints(coords = all_pts@coords,
+                        proj4string = CRS(stdCRS))
+#                    proj4string = all_cedars@proj4string)
+pred_pts = SpatialPoints(coords = pred_pts@coords,
+                     proj4string = pred_pts@proj4string)
+```
+
+# Rasterize the vector layers  
+```{r}
+# create empty raster with same extent as pts
+r <- raster(ext = extent(pred_pts), res = 500)
+
+x_all <- rasterize(all_pts, r, fun = 'count')
+x_pred <- rasterize(pred_pts, r, fun = 'count')
+```
+
+# Visualize the rasters
+
+```{r}
+s <- stack(x_all, x_pred)
+levelplot(s, 
+          margin=FALSE,                       
+          colorkey=list(
+            space='bottom',
+            axis.line=list(col='black'),
+            width=0.75
+          ),
+          par.settings=rasterTheme(
+             strip.background = list(col = 'transparent'),
+             axis.line = list(col = 'transparent'),
+             strip.border = list(col = 'transparent'),
+          ),
+          scales=list(draw=FALSE),            
+          col.regions=rev(magma(n = 101)),                   
+          at=seq(0, 200 , len=101),
+          names.attr=c("Actual localities", "Predicted localities"))
+```
+
+```{r}
+writeRaster(x, "all_cedars_heatmap", overwrite = T)
+```
+
+

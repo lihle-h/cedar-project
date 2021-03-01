@@ -1,0 +1,133 @@
+---
+author: "Thembelihle Hadebe"
+date: "1/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Set working directories
+
+```{r}
+if (Sys.getenv("USER") == 'thembelihle') {
+  datwd = "/Volumes/Storage/Clipped Rasters/"
+  giswd = "gis/" # for geospatial files
+  reswd = "/Volumes/Storage/results/"}
+```
+
+# Load required packages
+
+```{r}
+library(dplyr, quietly = T)
+library(rjson, quietly = T)
+library(raster, quietly = T)
+```
+
+
+# RGB Test Predictions
+
+```{r}
+dirs = list.dirs(path = "TestSetPredictions_RGB", full.names = TRUE, recursive = FALSE)
+dirs
+```
+
+```{r}
+predictions_RGB = NULL
+
+for (dir in dirs) {
+  path = paste(dir, "eval", "cedar-object-detection", "eval.json", sep = "/")
+  overall = fromJSON(file = path)[['overall']][[1]] %>% 
+    unlist()
+  predictions_RGB = rbind(predictions_RGB, overall)
+}
+
+predictions_RGB = predictions_RGB %>% 
+  as_tibble() 
+
+  select(-class_id, -class_name) %>% 
+  mutate_all(as.numeric)
+
+predictions_RGB = predictions_RGB %>% 
+  dplyr::select(-class_id, -class_name) %>% 
+  mutate_all(as.numeric) %>% 
+  mutate(threshold = seq(0.1, 0.9, 0.1)) %>% 
+  dplyr::select(threshold, everything())
+```
+
+
+# NRG Test Predictions
+
+```{r}
+dirs = list.dirs(path = "TestSetPredictions_NRG", full.names = TRUE, recursive = FALSE)
+dirs
+```
+
+```{r}
+predictions_NRG = NULL
+
+for (dir in dirs) {
+  path = paste(dir, "eval", "cedar-object-detection", "eval.json", sep = "/")
+  overall = fromJSON(file = path)[['overall']][[1]] %>% 
+    unlist()
+  predictions_NRG = rbind(predictions_NRG, overall)
+}
+
+predictions_NRG = predictions_NRG
+
+predictions_NRG = predictions_NRG %>% 
+  as_tibble() %>% 
+  select(-class_id, -class_name) %>% 
+  mutate_all(as.numeric)
+
+predictions_NRG = predictions_NRG %>% 
+  mutate(threshold = seq(0.1, 0.9, 0.1)) %>% 
+  select(threshold, everything())
+```
+
+
+# Plot results
+
+```{r}
+par(mar=c(4,4,2,2), mgp=c(2,1,0))
+layout(matrix(c(1,2,3,3), 1, 2, byrow = TRUE))
+plot(loess.smooth(predictions_RGB$threshold, predictions_RGB$recall), 
+     xlab = "Threshold",
+     ylab = "Recall",
+     typ = "l", col = "red", 
+     lwd = 1.25, las = 0,
+     cex.axis = 0.65,
+     cex.main = 0.65,
+     cex.lab = 0.75,
+     ylim = c(0, 0.75))
+title(main = list("(a)", cex = .75, font = 3))
+lines(loess.smooth(predictions_NRG$threshold, predictions_NRG$recall), lwd = 1.25)
+
+plot(loess.smooth(predictions_RGB$threshold, predictions_RGB$precision),
+     xlab = "Threshold",
+     ylab = "Precision",
+     typ = "l", col = "red", 
+     lwd = 1.25, las = 0,
+     cex.axis = 0.65,
+     cex.main = 0.65,
+     cex.lab = 0.75,
+     ylim = c(0, 0.75))
+title(main = list("(b)", cex = .75, font = 3))
+lines(loess.smooth(predictions_NRG$threshold, predictions_NRG$precision), lwd = 1.25)
+
+# Device size = 3.75 x 7.00 
+
+# par(mar=c(4,11.5,2,11.5))
+# plot(loess.smooth(predictions_RGB$recall, predictions_RGB$precision), 
+#      xlab = "Recall",
+#      ylab = "Precision",
+#      typ = "l", col = "red", 
+#      lwd = 2, las = 1,
+#      cex.axis = 0.8,
+#      cex.main = 0.8,
+#      xlim = c(0, 1),
+#      ylim = c(0, 1))
+# title(main = list("(c)", cex = 1, font = 3))
+# lines(loess.smooth(predictions_NRG$recall, predictions_NRG$precision), lwd = 2)
+```

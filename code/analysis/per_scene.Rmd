@@ -1,0 +1,104 @@
+---
+author: "Thembelihle Hadebe"
+output: html_notebook
+date: "2/11/2021"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(dplyr, quietly = T)
+library(rjson, quietly = T)
+```
+
+
+```{r}
+nullToNA <- function(x) {
+    x[sapply(x, is.null)] <- NA
+    return(x)
+}
+```
+
+```{r}
+dirs_RGB = list.dirs(path = "TestSetPredictions_RGB", full.names = TRUE, recursive = FALSE)
+dirs_NRG = list.dirs(path = "TestSetPredictions_NRG", full.names = TRUE, recursive = FALSE)
+```
+
+```{r}
+RGB_0.5 = NULL
+path = paste(dirs_RGB[5], "eval", "cedar-object-detection", "eval.json", sep = "/")
+eval = fromJSON(file = path)[['per_scene']]
+
+for (scene in 1:length(eval)) {
+  metrics = eval[[scene]][[1]] %>% unlist()
+  RGB_0.5 = rbind(RGB_0.5, metrics)
+}
+RGB_0.5 = RGB_0.5 %>% as.data.frame()
+row.names(RGB_0.5) <- names(eval)
+RGB_0.5 <- RGB_0.5[ order(row.names(RGB_0.5)), ]
+
+
+NRG_0.5 = NULL
+path = paste(dirs_NRG[5], "eval", "cedar-object-detection", "eval.json", sep = "/")
+eval = fromJSON(file = path)[['per_scene']]
+
+for (scene in 1:length(eval)) {
+  metrics = eval[[scene]][[1]] %>% unlist()
+  NRG_0.5 = rbind(NRG_0.5, metrics)
+}
+NRG_0.5 = NRG_0.5 %>% as_tibble()
+row.names(NRG_0.5) <- names(eval)
+```
+
+
+# Other thresholds
+
+```{r}
+RGB_0.1 = NULL
+path = paste(dirs_RGB[1], "eval", "cedar-object-detection", "eval.json", sep = "/")
+eval = fromJSON(file = path)[['per_scene']]
+
+for (scene in 1:length(eval)) {
+  metrics = eval[[scene]][[1]] %>% nullToNA() %>% as_tibble()
+  RGB_0.1 = rbind(RGB_0.1, metrics)
+}
+
+RGB_0.1 = RGB_0.1 %>% as.data.frame()
+row.names(RGB_0.1) <- names(eval)
+RGB_0.1 <- RGB_0.1[ order(row.names(RGB_0.1)), ]
+```
+
+```{r}
+RGB_0.3 = NULL
+path = paste(dirs_RGB[1], "eval", "cedar-object-detection", "eval.json", sep = "/")
+eval = fromJSON(file = path)[['per_scene']]
+
+for (scene in 1:length(eval)) {
+  metrics = eval[[scene]][[1]] %>% nullToNA() %>% as_tibble()
+  RGB_0.3 = rbind(RGB_0.3, metrics)
+}
+
+RGB_0.3 = RGB_0.3 %>% as.data.frame()
+row.names(RGB_0.3) <- names(eval)
+RGB_0.3 <- RGB_0.3[ order(row.names(RGB_0.3)), ]
+```
+
+```{r}
+RGB_0.9 = NULL
+path = paste(dirs_RGB[9], "eval", "cedar-object-detection", "eval.json", sep = "/")
+eval = fromJSON(file = path)[['per_scene']]
+
+for (scene in 1:length(eval)) {
+  metrics = eval[[scene]][[1]] %>% nullToNA() %>% as_tibble()
+  RGB_0.9 = rbind(RGB_0.9, metrics)
+}
+
+RGB_0.9 = RGB_0.9 %>% as.data.frame()
+row.names(RGB_0.9) <- names(eval)
+RGB_0.9 <- RGB_0.9[ order(row.names(RGB_0.9)), ]
+```
+
+
